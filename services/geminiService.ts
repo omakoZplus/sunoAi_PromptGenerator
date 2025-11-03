@@ -1,4 +1,3 @@
-
 import { GoogleGenAI } from "@google/genai";
 import { SunoPromptInputs } from '../types';
 import { 
@@ -10,7 +9,8 @@ import {
   PRODUCTION_TECHNIQUES,
   SOUND_DESIGN_OPTIONS,
   VIBE_PRESETS,
-  CHORD_PROGRESSIONS
+  CHORD_PROGRESSIONS,
+  SONG_STRUCTURE_TYPES
 } from "../constants";
 
 const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
@@ -29,10 +29,18 @@ export const generateSunoPrompt = async (inputs: SunoPromptInputs): Promise<stri
     lyrics,
     vibePreset,
     chords,
+    songStructure,
+    tempoChange,
+    keyChange
   } = inputs;
 
   const lyricsAreMeaningful = lyrics && lyrics.trim() !== '' && !lyrics.startsWith("[Verse 1]");
   const chordsAreMeaningful = chords && chords !== 'None';
+  
+  const structureDescription = songStructure
+    .map(item => `- ${item.type}: ${item.instructions || 'Standard execution'}`)
+    .join('\n');
+
 
   const promptToGemini = `
     You are an expert prompt engineer for the Suno AI music generation service, specializing in crafting vivid and effective prompts.
@@ -52,7 +60,9 @@ export const generateSunoPrompt = async (inputs: SunoPromptInputs): Promise<stri
     6. On 'Vibe Preset': If one is provided, translate its core aesthetic and feeling into descriptive musical terms. For example, for 'UNDERTALE', describe it as 'a blend of chiptune nostalgia, orchestral emotion, and quirky electronic beats'. For 'Cowboy Bebop', describe it as 'a cool, improvisational jazz fusion with bluesy undertones and a space-western feel'. **CRITICALLY, DO NOT mention the names of the games, anime, or source material in the final generated prompt.** Integrate these translated descriptions naturally into the overall theme and style.
     7. Detail the desired production techniques and sound design elements.
     8. If a chord progression is selected, mention it conceptually (e.g., 'featuring a classic pop anthem chord progression').
-    9. If lyrics are provided (and are not the default example), include them at the end under a "[Lyrics]" tag.
+    9. If a song structure is provided, describe it clearly in the prompt (e.g., 'The song begins with a quiet intro, builds into a powerful chorus...'). Use the user's instructions for each section.
+    10. If a tempo or key change is requested, describe it at an appropriate point in the song (e.g., 'the song builds to a dramatic key change in the final chorus' or 'it slows down for the bridge').
+    11. If lyrics are provided (and are not the default example), include them at the end under a "[Lyrics]" tag.
 
     **User's Creative Inputs:**
     - BPM: ${bpm}
@@ -66,6 +76,9 @@ export const generateSunoPrompt = async (inputs: SunoPromptInputs): Promise<stri
     - Key Chord Progression: ${chordsAreMeaningful ? chords : 'Not specified'}
     - Production Techniques/Styles: ${techniques.join(', ')}
     - Key VST/Sound Design: ${soundDesign.join(', ')}
+    - Song Structure: ${songStructure.length > 0 ? `\n${structureDescription}` : 'Not specified'}
+    - Tempo Change Requested: ${tempoChange}
+    - Key Change (Modulation) Requested: ${keyChange}
     - Lyrics: ${lyricsAreMeaningful ? `\n[Lyrics]\n${lyrics}` : ''}
 
     Generate the JSON output now.
@@ -121,13 +134,16 @@ export const inspireSunoInputs = async (lockedInputs: Partial<SunoPromptInputs> 
     - 'instruments': Choose 2 to 5 that fit the genre from: ${INSTRUMENTS.join(', ')}
     - 'vocals': Choose one from: ${VOCALS_OPTIONS.join(', ')}
     - 'theme': Create a short, descriptive theme (1-2 sentences) that matches the other parameters.
-    - 'bpm': Choose a number between 70 and 180 that is appropriate.
+    - 'bpm': Choose a number string between 70 and 180 that is appropriate (e.g. "120").
     - 'influences': Provide 1-2 artist names or a short descriptive phrase.
     - 'techniques': Choose 2-4 from: ${PRODUCTION_TECHNIQUES.join(', ')}
     - 'soundDesign': Choose 1-3 from: ${SOUND_DESIGN_OPTIONS.join(', ')}
     - 'vibePreset': Choose 0 or 1 that complements the idea from: ${VIBE_PRESETS.join(', ')}. Or return "".
     - 'chords': Choose one from: ${CHORD_PROGRESSIONS.join(', ')}
     - 'lyrics': ALWAYS return an empty string "".
+    - 'songStructure': Create a plausible song structure as an array of objects. Each object must have "id" (string, can be a placeholder like "1"), "type" (string from ${SONG_STRUCTURE_TYPES.join(', ')}), and "instructions" (string, short description). Generate 3-5 sections. Can be an empty array [].
+    - 'tempoChange': (boolean) true or false.
+    - 'keyChange': (boolean) true or false.
 
     Generate the JSON output now for the unlocked fields only.
   `;
@@ -148,9 +164,6 @@ export const inspireSunoInputs = async (lockedInputs: Partial<SunoPromptInputs> 
      const validatedResult: Partial<SunoPromptInputs> = {};
     for (const key of fieldsToGenerate) {
       if (result.hasOwnProperty(key)) {
-        // Fix for TypeScript error on line 151: Type 'string | string[]' is not assignable to type 'string & string[]'.
-        // This is a common issue when assigning to an object property using a dynamic key.
-        // Casting to 'any' is a pragmatic way to bypass this check as we know the types are compatible.
         (validatedResult as any)[key] = (result as any)[key];
       }
     }
@@ -158,6 +171,14 @@ export const inspireSunoInputs = async (lockedInputs: Partial<SunoPromptInputs> 
     // Ensure lyrics is always empty as requested
     if (validatedResult.hasOwnProperty('lyrics')) {
       validatedResult.lyrics = '';
+    }
+
+    // Ensure generated song structure has unique IDs
+    if (validatedResult.songStructure && Array.isArray(validatedResult.songStructure)) {
+      validatedResult.songStructure = validatedResult.songStructure.map((item, index) => ({
+        ...item,
+        id: `${Date.now()}-${index}` // Overwrite any incoming ID with a guaranteed unique one
+      }));
     }
 
     return validatedResult;
@@ -290,5 +311,127 @@ export const getSuggestedSoundDesigns = async (genre: string, mood: string): Pro
   } catch (error) {
     console.error("Error generating sound design suggestions with Gemini:", error);
     return [];
+  }
+};
+
+export const suggestRhythmicFeel = async (genre: string, mood: string): Promise<string> => {
+  if (!genre) return "";
+
+  const promptToGemini = `
+    You are a music production expert. Based on the following musical genre and mood, suggest ONE SINGLE rhythmic or melodic "feel".
+
+    Genre: "${genre}"
+    Mood: "${mood}"
+
+    **Constraints:**
+    1. You MUST choose ONE SINGLE technique ONLY from the following list: ${PRODUCTION_TECHNIQUES.join(', ')}.
+    2. Your response MUST be a single, valid JSON object with a single key "technique", which is a string.
+    Example: {"technique": "Syncopated Rhythm"}
+    3. Do not include any other text, explanations, or markdown formatting outside of this JSON object.
+
+    Generate the JSON output now.
+  `;
+
+  try {
+    const response = await ai.models.generateContent({
+      model: 'gemini-2.5-flash',
+      contents: promptToGemini,
+      config: {
+        responseMimeType: "application/json",
+      }
+    });
+    const jsonString = response.text.trim();
+    const result = JSON.parse(jsonString);
+
+    if (result && typeof result.technique === 'string' && PRODUCTION_TECHNIQUES.includes(result.technique)) {
+      return result.technique;
+    }
+    return ""; // Return empty string if validation fails
+  } catch (error) {
+    console.error("Error generating rhythmic feel suggestion with Gemini:", error);
+    return "";
+  }
+};
+
+
+export const expandTheme = async (currentTheme: string): Promise<string> => {
+  const promptToGemini = `
+    You are a creative writer specializing in music concepts. Expand the following simple musical theme into a more vivid and descriptive scenario (2-3 sentences) suitable for a music generation prompt. Make it evocative and inspiring.
+    
+    Original theme: "${currentTheme}"
+    
+    Your response should be only the expanded theme text, with no extra formatting or explanations.
+  `;
+  try {
+    const response = await ai.models.generateContent({
+      model: 'gemini-2.5-flash',
+      contents: promptToGemini,
+    });
+    return response.text.trim();
+  } catch (error) {
+    console.error("Error expanding theme:", error);
+    throw new Error("Could not expand theme.");
+  }
+};
+
+export const generateLyrics = async (theme: string, mood: string, genre: string): Promise<string> => {
+  const promptToGemini = `
+    You are a talented songwriter. Write a full set of song lyrics based on the following musical concept.
+    The lyrics should be structured with tags like [Verse 1], [Chorus], [Verse 2], [Bridge], [Outro].
+    The tone should match the mood and genre.
+
+    - Genre: ${genre}
+    - Mood: ${mood}
+    - Theme: ${theme}
+
+    Your response should contain ONLY the generated lyrics text.
+  `;
+  try {
+    const response = await ai.models.generateContent({
+      model: 'gemini-2.5-pro', // Using a more powerful model for creative writing
+      contents: promptToGemini,
+    });
+    return response.text.trim();
+  } catch (error) {
+    console.error("Error generating lyrics:", error);
+    throw new Error("Could not generate lyrics.");
+  }
+};
+
+export const deconstructVibe = async (text: string): Promise<Partial<SunoPromptInputs>> => {
+  const promptToGemini = `
+    You are a music analysis expert. Analyze the following text and deconstruct it into its core musical components.
+    Your response MUST be a single, valid JSON object.
+    For each key, you MUST select values ONLY from the provided lists. If a component is not clear from the text, omit its key from your response.
+
+    Text to analyze: "${text}"
+
+    **JSON Schema and Allowed Values:**
+    - "genre": (string) Choose ONE from this list: ${MUSICAL_GENRES.join(', ')}
+    - "mood": (string) Choose ONE from this list: ${MOODS.join(', ')}
+    - "instruments": (string array) Choose up to 5 from this list: ${INSTRUMENTS.join(', ')}
+    - "techniques": (string array) Choose up to 4 from this list: ${PRODUCTION_TECHNIQUES.join(', ')}
+    - "soundDesign": (string array) Choose up to 3 from this list: ${SOUND_DESIGN_OPTIONS.join(', ')}
+    - "vocals": (string) Choose ONE from this list: ${VOCALS_OPTIONS.join(', ')}
+    - "bpm": (string) A single number representing the tempo (e.g., "120").
+    - "influences": (string) A short descriptive phrase or artist names found in the text.
+    - "theme": (string) A short, one-sentence summary of the theme described in the text.
+
+    Generate the JSON object now.
+  `;
+  try {
+    const response = await ai.models.generateContent({
+      model: 'gemini-2.5-flash',
+      contents: promptToGemini,
+      config: {
+        responseMimeType: "application/json",
+      }
+    });
+    const jsonString = response.text.trim();
+    const result: Partial<SunoPromptInputs> = JSON.parse(jsonString);
+    return result;
+  } catch (error) {
+    console.error("Error deconstructing vibe:", error);
+    throw new Error("Could not deconstruct vibe.");
   }
 };

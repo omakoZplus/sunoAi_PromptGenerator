@@ -9,11 +9,12 @@ interface SectionProps {
   headerAccessory?: React.ReactNode;
   isLocked?: boolean;
   onLockToggle?: () => void;
+  isPulsing?: boolean;
 }
 
-const Section: React.FC<SectionProps> = ({ title, description, children, headerAccessory, isLocked, onLockToggle }) => {
+const Section: React.FC<SectionProps> = ({ title, description, children, headerAccessory, isLocked, onLockToggle, isPulsing }) => {
   return (
-    <section className="flex flex-col gap-3">
+    <section className={`flex flex-col gap-3 p-1 -m-1 transition-colors duration-300 ${isPulsing ? 'animate-pulse-bg rounded-lg' : ''}`}>
       <div className="flex justify-between items-center px-1 sm:px-0">
         <div className="flex items-center gap-3">
           {onLockToggle && (

@@ -1,3 +1,8 @@
+export interface SongStructureItem {
+  id: string;
+  type: string;
+  instructions: string;
+}
 
 export interface SunoPromptInputs {
   genre: string;
@@ -12,4 +17,8 @@ export interface SunoPromptInputs {
   lyrics: string;
   vibePreset: string;
   chords: string;
+  // Advanced Composition
+  songStructure: SongStructureItem[];
+  tempoChange: boolean;
+  keyChange: boolean;
 }

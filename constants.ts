@@ -1,5 +1,9 @@
 import { SunoPromptInputs } from './types';
 
+export const SONG_STRUCTURE_TYPES: string[] = [
+  "Intro", "Verse", "Pre-Chorus", "Chorus", "Post-Chorus", "Bridge", "Guitar Solo", "Synth Solo", "Instrumental Break", "Outro", "Fade In", "Fade Out"
+];
+
 export const INSTRUMENT_CATEGORIES = {
   "Keyboards & Synths": ["Accordion", "Acoustic Piano", "Analog Synth", "Arpeggiator", "Celesta", "Electric Piano", "FM Synth", "Grand Piano", "Harpsichord", "Mellotron", "Modular Synth", "Organ", "Piano", "Sampler", "Synth Bass", "Synth Lead", "Synth Pad", "Synthesizer", "TB-303", "Theremin", "Vocal Chops"],
   "Guitars & Bass": ["Acoustic Guitar", "Banjo", "Bass Guitar", "Classical Guitar", "Electric Guitar", "Lute", "Mandolin", "Oud", "Shamisen", "Sitar", "Ukulele"],
@@ -39,7 +43,7 @@ export const CHORD_PROGRESSIONS: string[] = [
 ].sort();
 
 export const PRODUCTION_TECHNIQUES: string[] = [
-  "Ambient Textures", "Arpeggiated", "Atmospheric", "Call and Response", "Catchy Melodies", "Clean Production", "Counterpoint Melody", "Crisp Mix", "Dissonant Chords", "Driving Rhythm", "Dynamic Builds", "Echo Delay", "Ethereal Pads", "Flanger", "Foley Sounds", "Gated Reverb", "Glitchy Vocals", "Granular Synthesis", "Gritty Distortion", "Heavy Autotune", "Heavy Reverb", "Intricate Arrangements", "Lo-fi Aesthetic", "Lush Harmonies", "Minimalist Repetition", "Orchestral Swells", "Panning Effects", "Phasing", "Polyrhythmic", "Punchy Drums", "Reverse Cymbals", "Sidechain Compression", "Slick Bassline", "Slow Tempo", "Stereo Widening", "Syncopated Rhythm", "Tape Saturation", "Twangy Guitar", "Upbeat Tempo", "Wall of Sound", "Warm Analog Synths"
+  "Ambient Textures", "Arpeggiated", "Atmospheric", "Call and Response", "Catchy Melodies", "Clean Production", "Counterpoint Melody", "Crisp Mix", "Dissonant Chords", "Driving Rhythm", "Dynamic Builds", "Echo Delay", "Ethereal Pads", "Flanger", "Foley Sounds", "Gated Reverb", "Glitchy Vocals", "Granular Synthesis", "Gritty Distortion", "Heavy Autotune", "Heavy Reverb", "Intricate Arrangements", "Lo-fi Aesthetic", "Lush Harmonies", "Minimalist Repetition", "Orchestral Swells", "Panning Effects", "Phasing", "Polyrhythmic", "Punchy Drums", "Reverse Cymbals", "Sidechain Compression", "Slick Bassline", "Slow Tempo", "Soaring legato melody", "Stereo Widening", "Syncopated Rhythm", "Tape Saturation", "Twangy Guitar", "Upbeat Tempo", "Wall of Sound", "Warm Analog Synths"
 ].sort();
 
 export const SOUND_DESIGN_OPTIONS: string[] = [
@@ -326,6 +330,15 @@ export const INITIAL_FORM_STATE: SunoPromptInputs = {
   lyrics: "[Verse 1]\nRaindrops on the glass...\n[Chorus]\nCity lights blur to a stream...",
   vibePreset: "",
   chords: "None",
+  // Advanced Composition
+  songStructure: [
+    { id: '1', type: 'Intro', instructions: 'Fade in with atmospheric pads' },
+    { id: '2', type: 'Verse', instructions: 'Minimalist percussion and bass' },
+    { id: '3', type: 'Chorus', instructions: 'Full energy, lush harmonies' },
+    { id: '4', type: 'Outro', instructions: 'Fade out with a repeating piano melody' },
+  ],
+  tempoChange: false,
+  keyChange: false,
 };
 
 export const EMPTY_FORM_STATE: SunoPromptInputs = {
@@ -341,6 +354,10 @@ export const EMPTY_FORM_STATE: SunoPromptInputs = {
   lyrics: '',
   vibePreset: '',
   chords: 'None',
+  // Advanced Composition
+  songStructure: [],
+  tempoChange: false,
+  keyChange: false,
 };
 
 export const TERMS_TO_EXCLUDE: string = "bad quality, out of tune, noisy, low fidelity, amateur, abrupt ending, static, distortion, mumbling, gibberish vocals, excessive reverb, clashing elements, generic, uninspired, robotic, artificial sound, metallic, harsh, shrill, muddy, distorted bass, weak drums, lifeless, monotone, repetitive, boring, flat, lifeless, thin, hollow, overproduced, underproduced";
