@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="icon" type="image/svg+xml" href="/vite.svg" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Suno AI Prompt Studio</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+      body {
+          background-color: #010010;
+          background-image:
+              radial-gradient(at 20% 20%, hsla(271, 95%, 25%, 0.3) 0px, transparent 50%),
+              radial-gradient(at 80% 80%, hsla(220, 95%, 35%, 0.25) 0px, transparent 50%),
+              radial-gradient(at 50% 95%, hsla(300, 95%, 40%, 0.25) 0px, transparent 50%);
+          background-attachment: fixed;
+          background-size: cover;
+      }
+      @keyframes pulse-glow {
+        0%, 100% {
+          box-shadow: 0 0 20px theme(colors.fuchsia.500/30), 0 0 30px theme(colors.purple.600/20);
+          transform: scale(1);
+        }
+        50% {
+          box-shadow: 0 0 30px theme(colors.fuchsia.500/50), 0 0 45px theme(colors.purple.600/30);
+          transform: scale(1.02);
+        }
+      }
+      .animate-pulse-glow {
+        animation: pulse-glow 3s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+      }
+    </style>
+  <script type="importmap">
+{
+  "imports": {
+    "@google/genai": "https://aistudiocdn.com/@google/genai@^1.26.0",
+    "react-dom/": "https://aistudiocdn.com/react-dom@^19.2.0/",
+    "react/": "https://aistudiocdn.com/react@^19.2.0/",
+    "react": "https://aistudiocdn.com/react@^19.2.0"
+  }
+}
+</script>
+</head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/index.tsx"></script>
+  </body>
+</html>
